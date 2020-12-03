@@ -680,7 +680,7 @@ ui <- navbarPage("PReSET",theme = shinytheme("flatly"), id = "tabset",
                                                label = "Layers to display:",
                                                choices = list("Planting benefit" = "planting_benefit",
                                                               "Shrub cover" = "cover_shrub",
-                                                              "Mean temperature (1981-2010 mean)" = "tmean",
+                                                              "Annual temperature (1981-2010 mean)" = "tmean",
                                                               "Annual precipitation (1981-2010 mean)" = "precip",
                                                               "Topographic position index" = "tpi"
                                                ),
@@ -729,7 +729,7 @@ ui <- navbarPage("PReSET",theme = shinytheme("flatly"), id = "tabset",
                            tags$b("Experimental/beta tools enabled.")
           ),
           
-          actionLink("caveats","Important caveats")
+          actionLink("caveats","Important limitations")
           
           
         ),
@@ -832,7 +832,7 @@ ui <- navbarPage("PReSET",theme = shinytheme("flatly"), id = "tabset",
                     
                     h3("Interpreting predicted planting benefit"),
                     "PReSET makes predictions of the effect of tree planting on mid-term (10-20 years post-fire) tree seedling densities. Predictions are made on a relative scale, from low to high, reflecting the amount by which tree planting increases tree seedling density over natural regeneration density.",
-                    "Predictions are made on a relative scale because making absolute seedling density predictions requires many assumptions (e.g., the weather in the years following the fire and the predominant management approaches). It also requires detailed knowledge about seed sources for natural regeneration.",
+                    "Predictions are made on a relative scale across the area of interest because making absolute seedling density predictions requires many assumptions (e.g., the weather in the years following the fire and the predominant management approaches). It also requires detailed knowledge about residual seed sources for natural regeneration. The purpose of this tool is to identify where within a given fire footprint tree planting may be the most (and least) effective at increasing tree seedling density, indepenedent of post-fire weather and assuming a uniform management approach. More intensive reforestation efforts in the areas where planting is predicted to be less successful may improve outcomes on those areas.",
                     "It is important to note that even areas with a high predicted planting benefit may not require planting because naural seedling density may already be sufficiently high.",
                     "Because it is focused on planting effects, this tool does not emphasize highly accurate predictions of natural seedling density. Other tools, in particular the POSCRPT tool developed by",a(href="https://esajournals.onlinelibrary.wiley.com/doi/10.1002/eap.1756","Shive et al. (2018)",.noWS = "after"),", make more refined predictions of natural regeneration based on the estimated density of nearby surviving trees (potential seed sources), and they should be used in conjunction with this tool to identify areas with low natural regeneration potential.",
                     "Absolute seedling density predictions are available (as an experimental or demonstration feature only) by enabling \"Experimental/beta features\" at the bottom of the toolbar pane.",
@@ -864,7 +864,7 @@ ui <- navbarPage("PReSET",theme = shinytheme("flatly"), id = "tabset",
                     '"Show high-severity area only" excludes all areas with severity values less than the threshold you specified upon uploading the severity raster. "Show yellow pine & mixed-conifer only" excludes all other vegetation types, according to the',a(href="https://www.fs.usda.gov/detail/r5/landmanagement/resourcemanagement/?cid=stelprdb5347192","USDA Forest Service Existing Vegetation"),'dataset. "Hide low model confidence areas" excludes all areas with insufficent data for high-confidence predictions. This feature is slow due to the additional computations necessary to quantify uncertainty for each grid cell, so we recommend setting all the other parameters as necessary first, and then enabling this option immediately prior to downloading predictions.',
                     p(),
                     h3("Experimental/beta features"),
-                    "These features should only be used by those who understand the important assumptions and caveats that are involved. Please see the \"Technical Details\" page for further details. These features serve primarily to demonstrate potential future functionality that could be implemented given additional data collection. They allow the user to make and interpret predictions of absolute seedling density (both natural and planted) in terms of seedlings per acre.",
+                    "These features should only be used by those who understand the important assumptions and limitations that are involved. Please see the \"Technical Details\" page for further details. These features serve primarily to demonstrate potential future functionality that could be implemented given additional data collection. They allow the user to make and interpret predictions of absolute seedling density (both natural and planted) in terms of seedlings per acre.",
                     "Making absolute seedling density predictions requires many assumptions (e.g., the weather in the years following the fire), and to predict accurately would require substantially more data than were collected for the development of this tool.",
                     p(),
                     tags$b("Predicted outcomes"),
@@ -954,7 +954,7 @@ ui <- navbarPage("PReSET",theme = shinytheme("flatly"), id = "tabset",
                # App title ----
                h1("PReSET"),
                h4('the Post-fire Reforestation Success Estimation Tool'),
-               'v 0.2 (beta)',
+               'v 0.2',
                br(),
                br(),
                "Developed by ",a(href="http://www.changingforests.com","Derek Young",.noWS="after"),", ",a(href="https://twitter.com/qmsorenson?lang=en","Quinn Sorenson",.noWS="after"),", and ",a(href="https://www.plantsciences.ucdavis.edu/people/andrew-latimer","Andrew Latimer",.noWS="after"),
