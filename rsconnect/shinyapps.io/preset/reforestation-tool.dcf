@@ -5,8 +5,8 @@ account: preset
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2037125
-bundleId: 3938703
-url: https://latimerlab.shinyapps.io/reforestation-tool/
-when: 1607011976.86189
+bundleId: 3939705
+url: https://reforestation.shinyapps.io/reforestation-tool/
+when: 1607026055.38747
 asMultiple: FALSE
 asStatic: FALSE
