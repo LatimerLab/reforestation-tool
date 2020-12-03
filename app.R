@@ -1,4 +1,6 @@
 library(shiny)
+library(shinythemes)
+library(shinyBS)
 library(ggplot2)
 library(raster)
 library(sf)
@@ -631,250 +633,419 @@ make_maps = function(mapping_vars, plant_year, density_low, density_high, map_ma
 
 
 # Define UI for app that draws a histogram ----
-ui <- fluidPage(
-  
-  useShinyjs(),                                           # Include shinyjs in the UI
-  extendShinyjs(text = jsResetCode, functions = c("reset")),                      # Add the js code to the page
-  
-  # App title ----
-  titlePanel("Post-fire reforestation success estimation tool"),
-  h4('aka "PRESET"'),
-  h6('v 0.1 (beta)'),
-  h6("Developed by: ",a(href="http://www.changingforests.com","Derek Young",.noWS="after"),", ",a(href="https://twitter.com/qmsorenson?lang=en","Quinn Sorenson",.noWS="after"),", ",a(href="https://www.plantsciences.ucdavis.edu/people/andrew-latimer","Andrew Latimer",.noWS="after")),
-  h6(a(href="https://latimer.ucdavis.edu/","Latimer Lab",.noWS="after")," and ",a(href="http://www.changingforests.com","Young Lab",.noWS="after"),", Department of Plant Sciences, UC Davis"),
-  
-  # Sidebar layout with input and output definitions ----
-  sidebarLayout(
-    
-    # Sidebar panel for inputs ----
-    sidebarPanel(
-      
-      ### Upload fire perim and severity
-      #fileInput("perim_file", "Fire perimeter"),
-      
-      conditionalPanel(
-        condition="output.map_loaded ===false",
-        
-        radioButtons(inputId = "resolution_input",
-                     label = "1. Choose spatial resolution:",
-                     choices = list("30 m pixels (slowest)" = 1, "60 m pixels" = 2, "120 m pixels (fastest)" = 3),
-                     selected = 3),
-        
-        tags$br(),
-        
-        fileInput("sev_file", "2. Upload severity raster"),
-        
-        conditionalPanel( condition = "output.severity_uploaded === true",
-              textInput("min_high_sev",label="2b. Minimum value to consider high severity"),
-              htmlOutput("severity_text")
- 
-                          ),
-        
-        fileInput("perim_file", "3. Upload fire perimeter (or focal area perimeter)"),
-        
-        HTML('&emsp;'),tags$b("Or,"),"use 2020 Creek Fire demo data: ",
-        
-        actionButton("upload_button","Go")
-      ),
-      
-      conditionalPanel(
-        condition="output.map_loaded === true",
-        "Fire perimeter/severity map loaded.",
-        actionButton("reset_button","Clear")
-      ),
+ui <- navbarPage("PReSET",theme = shinytheme("flatly"),
+                 
 
-      
-      # checkboxInput(inputId = "show_map_controls",
-      #               label = "Show map controls",
-      #               value = FALSE),
-      
-      
-      
-      ### Map display controls
-      conditionalPanel(
-        condition="output.map_loaded === true",
-      
-        
-        # Input: Slider for the number of bins ----
-        # sliderInput(inputId = "seedwall",
-        #             label = "Seed wall:",
-        #             min = -1.2,
-        #             max = -0.6,
-        #             value = -0.9),
+                 
+  tabPanel("Reforestation Tool",
+  
+    useShinyjs(),                                           # Include shinyjs in the UI
+    extendShinyjs(text = jsResetCode, functions = c("reset")),                      # Add the js code to the page
 
-        # sliderInput(inputId = "max_density",
-        #             label = "Maximum seedling density:",
-        #             min = 0,
-        #             max = 300,
-        #             value = 50),
-        radioButtons(inputId = "planted_year",
-                    label = "Planting year:",
-                    choices = list("1 year post-fire" = 1, "2 years post-fire" = 2, "3 years post-fire" = 3),
-                    selected = 2),
-        radioButtons(inputId = "shrub_assumption",
-                     label = "Expected shrub cover:",
-                     choices = list("Predicted (varies across space)" = "predicted", "Low (30%) everywhere" = "low", "Moderate (60%) everywhere" = "moderate", "High (90%) everywhere" = "high"),
-                     selected = "predicted"),
-        checkboxGroupInput(inputId = "map_masking",
-                           label = "Map filtering:",
-                           choices = list("Show high-severity area only" = "mask_non_high_sev",
-                                          "Show yellow pine & mixed-conifer only" = "mask_non_ypmc",
-                                          #"Hide model extrapolation areas" = "mask_extrap",
-                                          "Hide low model confidence areas (slow)" = "mask_uncertain"
-                           ),
-                           selected = c("mask_non_high_sev","mask_non_ypmc")),
+
+    # Sidebar layout with input and output definitions ----
+    fluidRow(
+      
+      # Sidebar panel for inputs ----
+      column(4,id="sidebar",
+             
+             tags$style("
+             .btn-file {  
+             background-color: #263e50; 
+             border-color: #263e50; 
+             }
+             
+             .btn-default {  
+             background-color: #263e50; 
+             border-color: #263e50; 
+             }
+
+             .progress-bar {
+             background-color: #263e50;
+             }
+             
+             #sidebar {
+             background-color: #ecf0f1;
+             }
+             
+             .navbar {margin-bottom: 0px; !important}
+
+             "),
+        
+        ### Upload fire perim and severity
+        #fileInput("perim_file", "Fire perimeter"),
+        
+        conditionalPanel(
+          condition="output.map_loaded ===false",
+          
+          tags$br(),
+          
+          radioButtons(inputId = "resolution_input",
+                       label = "1. Choose spatial resolution:",
+                       choices = list("30 m pixels (slowest)" = 1, "60 m pixels" = 2, "120 m pixels (fastest)" = 3),
+                       selected = 3),
+
+          tags$br(),
+          
+          fileInput("sev_file", "2. Upload severity raster"),
+
+          conditionalPanel( condition = "output.severity_uploaded === true",
+                textInput("min_high_sev",label="2b. Minimum value to consider high severity"),
+                htmlOutput("severity_text")
+   
+                            ),
+          
+          fileInput("perim_file", "3. Upload fire perimeter (or focal area perimeter)"),
+
+          HTML('&nbsp;'),tags$b("Or,"),"use 2020 Creek Fire demo data: ",
+          
+          actionButton("upload_button","Go", class = "btn-primary")
+        ),
+        
+
+        # checkboxInput(inputId = "show_map_controls",
+        #               label = "Show map controls",
+        #               value = FALSE),
+        
+        
+        
+        ### Map display controls
+        conditionalPanel(
+          condition="output.map_loaded === true",
+        
+          tags$br(),
+          
+          # Input: Slider for the number of bins ----
+          # sliderInput(inputId = "seedwall",
+          #             label = "Seed wall:",
+          #             min = -1.2,
+          #             max = -0.6,
+          #             value = -0.9),
+  
+          # sliderInput(inputId = "max_density",
+          #             label = "Maximum seedling density:",
+          #             min = 0,
+          #             max = 300,
+          #             value = 50),
+          radioButtons(inputId = "planted_year",
+                      label = "Planting year:",
+                      choices = list("1 year post-fire" = 1, "2 years post-fire" = 2, "3 years post-fire" = 3),
+                      selected = 2),
+          radioButtons(inputId = "shrub_assumption",
+                       label = "Expected shrub cover:",
+                       choices = list("Predicted (varies across space)" = "predicted", "Low (30%) everywhere" = "low", "Moderate (60%) everywhere" = "moderate", "High (90%) everywhere" = "high"),
+                       selected = "predicted"),
+          bsPopover("shrub_assumption", title = NULL,
+                    "Expected shrub cover 10+ years post-fire"),
+          
+          checkboxGroupInput(inputId = "map_masking",
+                             label = "Map filtering:",
+                             choices = list("Show high-severity area only" = "mask_non_high_sev",
+                                            "Show yellow pine & mixed-conifer only" = "mask_non_ypmc",
+                                            #"Hide model extrapolation areas" = "mask_extrap",
+                                            "Hide low model confidence areas (slow)" = "mask_uncertain"
+                             ),
+                             selected = c("mask_non_high_sev","mask_non_ypmc")),
+                             
+  
+          conditionalPanel(condition = "output.experimental_enabled === true",
+                           sliderInput(inputId = "density_range",
+                                       label = "Acceptable seedling density range (seedlings/acre):",
+                                       min = 0,
+                                       max = 600,
+                                       value = c(50,250)),
                            
-
-        conditionalPanel(condition = "output.experimental_enabled === true",
-                         sliderInput(inputId = "density_range",
-                                     label = "Acceptable seedling density range (seedlings/acre):",
-                                     min = 0,
-                                     max = 600,
-                                     value = c(50,250)),
-                         
-                         radioButtons(inputId = "seed_dist_assumption",
-                                      label = "Seed source distance:",
-                                      choices = list("Near (100 ft)" = "30",
-                                                     "Moderate (230 ft)" = "70",
-                                                     "Far (820 ft)" = "820",
-                                                     "Derived from severity map (dist. to non-high sev.)" = "severity"),
-                                      selected = 70),
-        ),
-        conditionalPanel(condition = "output.experimental_enabled === false",
-                          checkboxGroupInput(inputId = "map_selection_basic",
-                                             label = "Layers to display:",
-                                             choices = list("Planting benefit" = "planting_benefit",
-                                                            "Shrub cover" = "cover_shrub",
-                                                            "Mean temperature" = "tmean",
-                                                            "Annual precipitation" = "precip",
-                                                            "Topographic position index" = "tpi"
-                                             ),
-                                             selected = "planting_benefit")
-        ),
-        
-        conditionalPanel(condition = "output.experimental_enabled === true",
-                         checkboxGroupInput(inputId = "map_selection_advanced",
-                                            label = "Layers to display:",
-                                            choices = list("Predicted outcomes" = "main",
-                                                           "Planting benefit" = "planting_benefit",
-                                                           "Natural seedling density" = "density_unplanted",
-                                                           "Planted + natural seedling density" = "density_planted",
-                                                           "Modeled shrub cover" = "cover_shrub",
-                                                           "Seed tree distance" = "seed_distance",
-                                                           "Mean temperature" = "tmean",
-                                                           "Annual precipitation" = "precip",
-                                                           "Topographic position index" = "tpi"
-                                            ),
-                                            selected = "main")
-                         
-                         ),
-     
-        tags$br(),
-        
-        conditionalPanel(condition = "output.experimental_enabled === true",
-          selectInput("dataset_advanced", "Download data:",
-                      choices = c("Predicted outcomes", "Planting benefit", "Natural seedling density", "Planted + natural seedling density"))
-        ),
-        conditionalPanel(condition = "output.experimental_enabled === false",
-                         selectInput("dataset_basic", "Download data:",
-                                     choices = c("Planting benefit"))
-
-        ),
-        downloadButton("downloadData", "Download"),
-        
-        
-
-        tags$br(),
-        tags$br(),
-        
-        conditionalPanel(condition = "output.experimental_enabled === false",
-          actionButton("experimental_enabled","Enable experimental/beta tools")
-        ),
-        conditionalPanel(condition = "output.experimental_enabled === true",
-                         tags$b("Experimental/beta tools enabled.")
+                           radioButtons(inputId = "seed_dist_assumption",
+                                        label = "Seed source distance:",
+                                        choices = list("Near (100 ft)" = "30",
+                                                       "Moderate (230 ft)" = "70",
+                                                       "Far (820 ft)" = "820",
+                                                       "Derived from severity map (dist. to non-high sev.)" = "severity"),
+                                        selected = 70),
+          ),
+          conditionalPanel(condition = "output.experimental_enabled === false",
+                            checkboxGroupInput(inputId = "map_selection_basic",
+                                               label = "Layers to display:",
+                                               choices = list("Planting benefit" = "planting_benefit",
+                                                              "Shrub cover" = "cover_shrub",
+                                                              "Mean temperature" = "tmean",
+                                                              "Annual precipitation" = "precip",
+                                                              "Topographic position index" = "tpi"
+                                               ),
+                                               selected = "planting_benefit")
+          ),
+          
+          conditionalPanel(condition = "output.experimental_enabled === true",
+                           checkboxGroupInput(inputId = "map_selection_advanced",
+                                              label = "Layers to display:",
+                                              choices = list("Predicted outcomes" = "main",
+                                                             "Planting benefit" = "planting_benefit",
+                                                             "Natural seedling density" = "density_unplanted",
+                                                             "Planted + natural seedling density" = "density_planted",
+                                                             "Modeled shrub cover" = "cover_shrub",
+                                                             "Seed tree distance" = "seed_distance",
+                                                             "Mean temperature" = "tmean",
+                                                             "Annual precipitation" = "precip",
+                                                             "Topographic position index" = "tpi"
+                                              ),
+                                              selected = "main")
+                           
+                           ),
+       
+          tags$br(),
+          
+          conditionalPanel(condition = "output.experimental_enabled === true",
+            selectInput("dataset_advanced", "Download data:",
+                        choices = c("Predicted outcomes", "Planting benefit", "Natural seedling density", "Planted + natural seedling density"))
+          ),
+          conditionalPanel(condition = "output.experimental_enabled === false",
+                           selectInput("dataset_basic", "Download data:",
+                                       choices = c("Planting benefit"))
+  
+          ),
+          downloadButton("downloadData", "Download",class="btn-orimary"),
+          
+          
+  
+          tags$br(),
+          tags$br(),
+          
+          conditionalPanel(condition = "output.experimental_enabled === false",
+            actionButton("experimental_enabled","Enable experimental/beta tools",class = "btn-primary")
+          ),
+          conditionalPanel(condition = "output.experimental_enabled === true",
+                           tags$b("Experimental/beta tools enabled.")
+          ),
+          
+          "Important caveats"
+          
+          
         ),
         
-        "Important caveats"
+        conditionalPanel(
+          condition="output.map_loaded === true",
+          tags$br(),
+          actionButton("reset_button","Reset perimeter and severity",class = "btn-primary")
+        ),
         
+        tags$br()
         
+      ),
+      
+      # Main panel for displaying outputs ----
+      column(8,
+  
+             tags$br(),
+             
+        # Conditional panel to hide all the maps if user has not yet uploaded a perimeter shapefile
+        conditionalPanel(
+            condition = "output.perim_uploaded === true",
+            
+          
+            
+            ## Main map
+            conditionalPanel(
+              condition = "(!output.experimental_enabled && input.map_selection_basic.includes('main') === true) || (output.experimental_enabled && input.map_selection_advanced.includes('main') === true)",      
+              plotOutput(outputId = "distPlot",height="600px"),
+              tags$br()
+            ),
+            
+            conditionalPanel(
+              condition = "(!output.experimental_enabled && input.map_selection_basic.includes('planting_benefit') === true) || (output.experimental_enabled && input.map_selection_advanced.includes('planting_benefit') === true)",      
+              plotOutput(outputId = "plantingBenefitPlot",height="600px"),
+              tags$br()
+            ),
+            
+            ## Unplanted density
+            conditionalPanel(
+              condition = "(!output.experimental_enabled && input.map_selection_basic.includes('density_unplanted') === true) || (output.experimental_enabled && input.map_selection_advanced.includes('density_unplanted') === true)",      
+              plotOutput(outputId = "densityUnplantedPlot",height="600px"),
+              tags$br(" ")
+            ),
+            
+            ## Planted density
+            conditionalPanel(
+              condition = "(!output.experimental_enabled && input.map_selection_basic.includes('density_planted') === true) || (output.experimental_enabled && input.map_selection_advanced.includes('density_planted') === true)",      
+              plotOutput(outputId = "densityPlantedPlot",height="600px"),
+              tags$br()
+            ),
+            
+            ## Shrub cover
+            conditionalPanel(
+              condition = "(!output.experimental_enabled && input.map_selection_basic.includes('cover_shrub') === true) || (output.experimental_enabled && input.map_selection_advanced.includes('cover_shrub') === true)",      
+              plotOutput(outputId = "coverShrubPlot",height="600px"),
+              tags$br()
+            ),
+            
+            ## Seed distance
+            conditionalPanel(
+              condition = "(!output.experimental_enabled && input.map_selection_basic.includes('seed_distance') === true) || (output.experimental_enabled && input.map_selection_advanced.includes('seed_distance') === true)",      
+              plotOutput(outputId = "seedDistancePlot",height="600px"),
+              tags$br()
+            ),
+            
+            ## Tmin
+            conditionalPanel(
+              condition = "(!output.experimental_enabled && input.map_selection_basic.includes('tmean') === true) || (output.experimental_enabled && input.map_selection_advanced.includes('tmean') === true)",      
+              plotOutput(outputId = "tmeanPlot",height="600px"),
+              tags$br()
+            ),
+            
+            ## Precip
+            conditionalPanel(
+              condition = "(!output.experimental_enabled && input.map_selection_basic.includes('precip') === true) || (output.experimental_enabled && input.map_selection_advanced.includes('precip') === true)",      
+              plotOutput(outputId = "precipPlot",height="600px"),
+              tags$br()
+            ),
+            
+            ## TPI
+            conditionalPanel(
+              condition = "(!output.experimental_enabled && input.map_selection_basic.includes('tpi') === true) || (output.experimental_enabled && input.map_selection_advanced.includes('tpi') === true)",      
+              plotOutput(outputId = "tpiPlot",height="600px"),
+              tags$br()
+            )
+        )
+  
+  
       )
-    ),
-    
-    # Main panel for displaying outputs ----
-    mainPanel(
-
-      # Conditional panel to hide all the maps if user has not yet uploaded a perimeter shapefile
-      conditionalPanel(
-          condition = "output.perim_uploaded === true",
-          
-        
-          
-          ## Main map
-          conditionalPanel(
-            condition = "(!output.experimental_enabled && input.map_selection_basic.includes('main') === true) || (output.experimental_enabled && input.map_selection_advanced.includes('main') === true)",      
-            plotOutput(outputId = "distPlot",height="600px"),
-            tags$br()
-          ),
-          
-          conditionalPanel(
-            condition = "(!output.experimental_enabled && input.map_selection_basic.includes('planting_benefit') === true) || (output.experimental_enabled && input.map_selection_advanced.includes('planting_benefit') === true)",      
-            plotOutput(outputId = "plantingBenefitPlot",height="600px"),
-            tags$br()
-          ),
-          
-          ## Unplanted density
-          conditionalPanel(
-            condition = "(!output.experimental_enabled && input.map_selection_basic.includes('density_unplanted') === true) || (output.experimental_enabled && input.map_selection_advanced.includes('density_unplanted') === true)",      
-            plotOutput(outputId = "densityUnplantedPlot",height="600px"),
-            tags$br(" ")
-          ),
-          
-          ## Planted density
-          conditionalPanel(
-            condition = "(!output.experimental_enabled && input.map_selection_basic.includes('density_planted') === true) || (output.experimental_enabled && input.map_selection_advanced.includes('density_planted') === true)",      
-            plotOutput(outputId = "densityPlantedPlot",height="600px"),
-            tags$br()
-          ),
-          
-          ## Shrub cover
-          conditionalPanel(
-            condition = "(!output.experimental_enabled && input.map_selection_basic.includes('cover_shrub') === true) || (output.experimental_enabled && input.map_selection_advanced.includes('cover_shrub') === true)",      
-            plotOutput(outputId = "coverShrubPlot",height="600px"),
-            tags$br()
-          ),
-          
-          ## Seed distance
-          conditionalPanel(
-            condition = "(!output.experimental_enabled && input.map_selection_basic.includes('seed_distance') === true) || (output.experimental_enabled && input.map_selection_advanced.includes('seed_distance') === true)",      
-            plotOutput(outputId = "seedDistancePlot",height="600px"),
-            tags$br()
-          ),
-          
-          ## Tmin
-          conditionalPanel(
-            condition = "(!output.experimental_enabled && input.map_selection_basic.includes('tmean') === true) || (output.experimental_enabled && input.map_selection_advanced.includes('tmean') === true)",      
-            plotOutput(outputId = "tmeanPlot",height="600px"),
-            tags$br()
-          ),
-          
-          ## Precip
-          conditionalPanel(
-            condition = "(!output.experimental_enabled && input.map_selection_basic.includes('precip') === true) || (output.experimental_enabled && input.map_selection_advanced.includes('precip') === true)",      
-            plotOutput(outputId = "precipPlot",height="600px"),
-            tags$br()
-          ),
-          
-          ## TPI
-          conditionalPanel(
-            condition = "(!output.experimental_enabled && input.map_selection_basic.includes('tpi') === true) || (output.experimental_enabled && input.map_selection_advanced.includes('tpi') === true)",      
-            plotOutput(outputId = "tpiPlot",height="600px"),
-            tags$br()
-          )
-      )
-
-
     )
-  )
+  ), # close main tab
+  
+  tabPanel("User Guide",
+           fluidRow(
+             
+             column(3),
+             column(6,
+                    tags$br(),
+                    
+                    h3("Interpreting predicted planting benefit"),
+                    "PReSET produces predictions of the effect of tree planting on mid-term (10-20 years post-fire) tree seedling densities. Predictions are made on a relative scale, from low to high, reflecting the amount by which tree planting increases tree seedling density over natural regeneration density.",
+                    "Predictions are made on a relative scale because making absolute seedling density predictions requires many assumptions (e.g., the weather in the years following the fire). It also requires detailed knowledge about seed sources for natural regeneration.",
+                    "It is important to note that even areas with a high predicted planting benefit may not be suitable for planting because naural seedling density may already be sufficiently high.",
+                    "Because it is focused on planting effects, this tool does not emphasize highly accurate predictions of natural seedling density. Other tools, in particular the POSCRPT tool developed by",a(href="https://esajournals.onlinelibrary.wiley.com/doi/10.1002/eap.1756","Shive et al. (2018)",.noWS = "after"),", make more refined predictions of natural regeneration based on the estimated density of nearby surviving trees (potential seed sources), and they should be used in conjunction with this tool to identify areas with low natural regeneration potential.",
+                    "Absolute seedling density predictions are available (as an experimental or demonstration feature only) by enabling \"Experimental/beta features\" at the bottom of the toolbar pane.",
+                    
+                    
+                    h3("Spatial scope"),
+                    "PReSET predicts reforestation outcomes for yellow pine and mixed-conifer forest areas of the Sierra Nevada in California. Developing predictions requires extensive field data from post-fire reforestation projects (see Technical Details page), and thus far, the required data have only been collected in the Sierra Nevada. The spatial scope of this tool could be expanded by collecting and incorporating additional data from other areas.",
+                    
+                    h3("User inputs"),
+                    
+                    tags$b("Spatial resolution"),
+                    br(),
+                    "We recommend that you start with the coarsest resolution for experimentation, and then switch to a final resolution (if necessary for the application) for final mapping.",
+                    p(),
+                    tags$b("Severity raster upload"),
+                    br(),
+                    "You can upload any raster with a continuous or categorical classification of fire severity (e.g., BAER, RAVG, MTBS). After you upload raster, you will be asked to specify which value to consider the threshold for \"high severity\". Any pixels with values at or above this threshold will be consiered high-severity. This is used for masking out non-high-severity area and (if experimental tools are enabled - see below) estimating distance to seed source.",
+                    p(),
+                    tags$b("Fire perimeter upload"),
+                    br(),
+                    "Upload a perimeter (polygon) in a single-file format. Acceptable formats include KML, GPKG, and GeoJSON. This can be a perimeter for the entire fire, or just for a specific area of interest. As long as the severity raser covers the full extent of the uploaded polygon, it is OK if it extends beyond it.",
+                    p(),
+                    tags$b("Expected shrub cover"),
+                    br(),
+                    "Specify the assumption to use for shrub cover at 10+ years following fire. The default option is to use predicted values. This option uses an internal algorithm to predict future shrub cover using environmental variables (see Technical Details page). The other options apply a constant assumed shrub cover (either 30%, 60%, or 90%) across the entire landscape. Use one of these options if you expect that you can predict future shrub cover better than the built-in algorithm. The algorithm-based shrub predictions can be viewed by enabling the \"Shrub cover\" layer under the \"Layers to display\" menu. If you think that one area of a fire will have low shrub cover and another area will have high shrub cover, you can export preductions for both shrub cover values (each for the entire landscape) and combine them as appropriate in GIS.",
+                    p(),
+                    tags$b("Map filtering"),
+                    br(),
+                    '"Show high-severity area only" excludes all areas with severity values less than the threshold you specified upon uploading the severity raster. "Show yellow pine & mixed-conifer only" excludes all other vegetation types, according to the',a(href="https://www.fs.usda.gov/detail/r5/landmanagement/resourcemanagement/?cid=stelprdb5347192","USDA Forest Service Existing Vegetation"),'dataset. "Hide low model confidence areas" excludes all areas with insufficent data for high-confidence predictions. This feature is slow due to the additional computations necessary to quantify uncertainty for each grid cell, so we recommend setting all the other parameters as necessary first, and then enabling this option immediatly prior to downloading predictions.',
+                    p(),
+                    tags$b("Expected shrub cover"),
+                    br(),
+                    "Specify the assumption to use for shrub cover at 10+ years following fire. The default option is to use predicted values. This option uses an internal algorithm to predict future shrub cover using environmental variables (see Technical Details page). The other options apply a constant assumed shrub cover (either 30%, 60%, or 90%) across the entire landscape. Use one of these options if you expect that you can predict future shrub cover better than the built-in algorithm. The algorithm-based shrub predictions can be viewed by enabling the \"Shrub cover\" layer under the \"Layers to display\" menu. If you think that one area of a fire will have low shrub cover and another area will have high shrub cover, you can export preductions for both shrub cover values (each for the entire landscape) and combine them as appropriate in GIS.",
+                    p(),
+                    h3("Experimental/beta features"),
+                    "These features should only be used by those who understand the important assumptions and caveats that are involved. Please see the \"Technical Details\" page for further details. These features serve primarily to demonstrate potential future functionality that could be implemented given additional data collection. They allow the user to make and interpret predictions of absolute seedling density (both natural and planted) in terms of seedlings per acre.",
+                    "Making absolute seedling density predictions requires many assumptions (e.g., the weather in the years following the fire), and to predict accurately would require substantially more data than were collected for the development of this tool.",
+                    p(),
+                    tags$b("Predicted outcomes"),
+                    br(),
+                    "This prediction map categorizes the landscape based on whether natural seedling density, or natural+planted seedling density, is predicted to fall within the acceptable seedling density range specified by the user.",
+                    p(),
+                    tags$b("Natural and planted seedling density predictions"),
+                    br(),
+                    "These maps show predicted natural seedling density and predicted natural+planted seedling density in absolute terms (seedlings/acre).",
+                    p(),
+                    tags$b("Seed source distance"),
+                    br(),
+                    "The user can specify whether seed sources are considered to be near (100 ft), moderate (230 ft) or far (820 ft), or the user can specify for the tool estimate seed source distance from the supplied fire severity map. This option assumes that any point that is not high-severity (including all points outside the fire perimeter) contains seed sources.",
+                    "This is a rudimentary approach, asbecause capturing the nuanced effect of seed source spatial arrangement is not a goal of this project. Other tools, in particular the POSCRPT tool developed by",a(href="https://esajournals.onlinelibrary.wiley.com/doi/10.1002/eap.1756","Shive et al. (2018)",.noWS = "after"),", make more refined predictions of natural regeneration based on the estimated density of nearby surviving trees (potential seed sources) and can be used in conjunction with this tool.",
+                    "To estimate the relative effect of tree planting on ultimate seedling density (the primary focus of this tool), it is not necessary to know the seed source distance. It is only required for absolute density predictions.",
+                    "While assuming a constant seed source distance across a burned landscape (3 of the 4 options for this input) is not realistic, this implementation makes it possible for a user to export predictions assuming multiple different seed source assumptions and then merge them in GIS using on-the-ground knowledge of seed source availability.",
+                    p(),
+                    
+                    
+                    
+                    
+                    br(),
+             ),
+             column(3)
+             
+           )
+
+           
+  ),
+  
+  
+  
+  tabPanel("Technical Details",
+           
+           tags$br(),
+
+           "Technical details",
+           p(),
+           "Will be completed by Dec 8",
+           "with standard error of prediction > 0.60 on the log-transformed seedling density scale",
+           "assumption of seed source and how fit"
+           
+  ),
+           
+  
+  
+  tabPanel("About",
+           
+           fluidRow(
+             
+             column(3),
+             column(6,
+           
+               # App title ----
+               h1("PReSET"),
+               h4('the Post-fire Reforestation Success Estimation Tool'),
+               'v 0.2 (beta)',
+               br(),
+               br(),
+               "Developed by ",a(href="http://www.changingforests.com","Derek Young",.noWS="after"),", ",a(href="https://twitter.com/qmsorenson?lang=en","Quinn Sorenson",.noWS="after"),", and ",a(href="https://www.plantsciences.ucdavis.edu/people/andrew-latimer","Andrew Latimer",.noWS="after"),
+
+               br(),
+               a(href="https://latimer.ucdavis.edu/","Latimer Lab",.noWS="after")," and ",a(href="http://www.changingforests.com","Young Lab",.noWS="after"),", Department of Plant Sciences, UC Davis",
+               p(),
+               br(),
+               "The code and data for this app are ",a(href="https://github.com/LatimerLab/reforestation-tool","publicly available on GitHub")," under the MIT open-source license.",
+               br(),
+               p(),
+               br(),
+               "We welcome questions, feedback, and suggestions and will do our best to incorporate any requests. Please direct inquiries to djyoung@ucdavis.edu.",
+               br(),
+               p(),
+               br(),
+               
+               "Funded by the",a(href="http://www.firescience.gov","Joint Fire Science Program"),
+               br(),
+               p(),
+               br(),
+               a(href="http://www.firescience.gov",img(src='jfsp_logo_highres.png',width=100)),
+               HTML('&nbsp;'),HTML('&nbsp;'),HTML('&nbsp;'),HTML('&nbsp;'),HTML('&nbsp;'),
+               a(href="https://www.plantsciences.ucdavis.edu/",img(src='ps_logo.png',width = 300))),
+             
+             
+             column(3)
+             
+           )
+           
+           )
+  
 )
 
 
@@ -923,7 +1094,7 @@ server <- function(input, output, session) {
       range_text = "[no severity uploaded yet]"
     }
     
-    HTML('&emsp;', paste0( "Range of severity values in uploaded raster: ",range_text,tags$br(),tags$br()))
+    HTML('&nbsp;', paste0("Range of severity values in uploaded raster:",tags$br(),'&nbsp;&nbsp;',range_text,tags$br(),tags$br()))
     
     
     })
@@ -1099,3 +1270,19 @@ server <- function(input, output, session) {
 
 
 shinyApp(ui = ui, server = server)
+
+
+
+### Navbar css
+
+#  .navbar-default {
+#     color: #ffffff;
+#     background-color: #b1b1b3 !important;
+#  }
+#  .navbar-default .navbar-nav>.active>a,.navbar-default .navbar-nav>.active>a:hover,.navbar-default .navbar-nav>.active>a:focus{
+#   color:#aaaaaa;background-color:#AAA000}
+#  }
+# .navbar-default:hover {
+#     background-color: #aaaaaa !important;
+#     color: yellow;
+# }
