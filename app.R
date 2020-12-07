@@ -838,7 +838,7 @@ ui <- navbarPage("PReSET",theme = shinytheme("flatly"), id = "tabset",
                     "Absolute seedling density predictions are available (as an experimental or demonstration feature only) by enabling \"Experimental/beta features\" at the bottom of the toolbar pane.",
                     
                     
-                    h3("Spatial scope"),
+                    h3("Spatial domain"),
                     "PReSET predicts reforestation outcomes for yellow pine and mixed-conifer forest areas of the Sierra Nevada in California. Developing predictions requires extensive field data from post-fire reforestation projects (see Technical Details page), and thus far, the required data have only been collected in the Sierra Nevada. The spatial scope of this tool could be expanded by collecting and incorporating additional data from other areas.",
                     
                     h3("User inputs"),
