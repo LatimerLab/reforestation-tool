@@ -64,6 +64,8 @@ prep_mapping_vars = function(perim,sev,input,min_high_sev_manual) {
     env = brick("data/env_raster_stack_extracoarse.tif")
   }
   
+  perim = st_zm(perim, drop=TRUE) # remove Z dimension from Arc export
+  
   env = crop(env,perim %>% st_transform(projection(env)))
   env = mask(env,perim %>% st_transform(projection(env)))
 
@@ -712,7 +714,7 @@ ui <- navbarPage("PReSET",theme = shinytheme("flatly"), id = "tabset",
           ),
           conditionalPanel(condition = "output.experimental_enabled === false",
                            selectInput("dataset_basic", "Download data:",
-                                       choices = c("Planting benefit"))
+                                       choices = c("Planting benefit", "Modeled shrub cover"))
   
           ),
           downloadButton("downloadData", "Download",class="btn-orimary"),
@@ -1079,13 +1081,13 @@ server <- function(input, output, session) {
                        #{custom_debug(input)}
                {
 
-                 min_high_sev_manual(300)
+                 min_high_sev_manual(700)
                  
                  demofile = NULL
-                 demofile$sev_file$datapath = "data/demo-data/creek_dnbr_utm.tif"
+                 demofile$sev_file$datapath = "data/demo-data/creek_rdnbr_utm_final.tif"
                  sev(load_sev(demofile))
                  demofile = NULL
-                 demofile$perim_file$datapath = "data/demo-data/creek_perim.kml"
+                 demofile$perim_file$datapath = "data/demo-data/creek_perim_final.kml"
                  perim(load_perim(demofile))
                  
                }
@@ -1148,7 +1150,8 @@ server <- function(input, output, session) {
            "Predicted outcomes" = "overall_code",
            "Planting benefit" = "planting_benefit_rel",
            "Natural seedling density" = "pred_noplant",
-           "Planted + natural seedling density" = "pred_plant")
+           "Planted + natural seedling density" = "pred_plant",
+           "Modeled shrub cover" = "Shrubs")
   })
   
   dataset_filename <- reactive({
@@ -1156,7 +1159,8 @@ server <- function(input, output, session) {
            "Predicted outcomes" = "predicted_outcomes",
            "Planting benefit" = "planting_benefit",
            "Natural seedling density" = "density_natural",
-           "Planted + natural seedling density" = "density_planted_plus_natural")
+           "Planted + natural seedling density" = "density_planted_plus_natural",
+           "Modeled shrub cover" = "modeled_shrub_cover")
   })
 
   
