@@ -258,7 +258,7 @@ get_benefit_range = function(env_df) {
 
 #### Function for making maps based on inputs ####
 # This function relies on some globals from above
-make_maps = function(mapping_vars, plant_year, density_low, density_high, map_masking) {
+make_maps = function(mapping_vars, plant_year, density_low, density_high, map_masking, dead_tree_seed_enabled = FALSE, dead_tree_seed_scalar = 0.25) {
 
   if(is.null(mapping_vars)) {
     
@@ -298,6 +298,20 @@ make_maps = function(mapping_vars, plant_year, density_low, density_high, map_ma
     # predict seedlings per ha (incl undoing the response variable trasformation)
     pred = predict(mod,env_df,re.form=NA) %>% exp() - 24.99
 
+    ## Dead-tree seed production bonus:
+    ## In certain conditions, fire-killed trees produce viable seeds. This adds a per-pixel
+    ## bonus reflecting natural regeneration from the in-situ dead trees. The bonus is
+    ## scalar * (pred at minimum seed dist 15m - pred at actual seed dist), i.e., the fraction
+    ## of what nearby surviving trees would have contributed that the dead trees contribute.
+    ## The same absolute bonus is added to both planted and unplanted predictions.
+    if(dead_tree_seed_enabled) {
+      env_df_min_seed = env_df %>% mutate(log10SeedWallConifer = log10(15))
+      pred_min_seed = predict(mod, env_df_min_seed, re.form=NA) %>% exp() - 24.99
+      dead_tree_bonus_ha = dead_tree_seed_scalar * pmax(pred_min_seed - pred, 0)
+    } else {
+      dead_tree_bonus_ha = 0
+    }
+
     ## get uncertainty following http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html # lme4 section
 
     if("mask_uncertain" %in% map_masking) {
@@ -333,7 +347,7 @@ make_maps = function(mapping_vars, plant_year, density_low, density_high, map_ma
 
     pred_df = env_df
     
-    pred_df$pred = pred / 2.47 # convert seedlings/ha to seedlings/acre
+    pred_df$pred = pred / 2.47 + dead_tree_bonus_ha / 2.47 # convert seedlings/ha to seedlings/acre; bonus already in ha units
     pred_df$stderr = stderr
     
     
@@ -676,6 +690,21 @@ ui <- navbarPage("PReSET",theme = shinytheme("flatly"), id = "tabset",
                                                        "Far (820 ft)" = "820",
                                                        "Derived from severity map (dist. to non-high sev.)" = "severity"),
                                         selected = 70),
+
+                           checkboxInput(inputId = "dead_tree_seed_enabled",
+                                         label = "Enable dead-tree seed production",
+                                         value = FALSE),
+                           bsPopover("dead_tree_seed_enabled", title = NULL,
+                                     "In some conditions, fire-killed trees produce viable seeds. When enabled, adds a per-pixel natural regeneration bonus reflecting seed production by standing dead trees. The bonus equals the scalar times the predicted gain from having a seed source at the minimum distance (15 m)."),
+                           conditionalPanel(
+                             condition = "input.dead_tree_seed_enabled === true",
+                             sliderInput(inputId = "dead_tree_seed_scalar",
+                                         label = "Dead-tree seed production (relative to surviving trees at 15 m):",
+                                         min = 0,
+                                         max = 1,
+                                         value = 0.25,
+                                         step = 0.05)
+                           ),
           ),
           conditionalPanel(condition = "output.experimental_enabled === false",
                             checkboxGroupInput(inputId = "map_selection_basic",
@@ -1095,7 +1124,9 @@ server <- function(input, output, session) {
   
   mapping_vars = reactive({ prep_mapping_vars(perim(),sev(),input,min_high_sev_manual()) })
 
-  maps = reactive({ make_maps(mapping_vars(), input$planted_year, input$density_range[1], input$density_range[2], input$map_masking) })
+  maps = reactive({ make_maps(mapping_vars(), input$planted_year, input$density_range[1], input$density_range[2], input$map_masking,
+                              isTRUE(input$dead_tree_seed_enabled),
+                              ifelse(is.null(input$dead_tree_seed_scalar), 0.25, input$dead_tree_seed_scalar)) })
 
   output$distPlot <- renderPlot({
  
