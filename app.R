@@ -296,9 +296,9 @@ make_maps = function(mapping_vars, plant_year, density_low, density_high, map_ma
                        env_df_plant)
     
     # predict seedlings per ha (incl undoing the response variable trasformation)
-    pred = predict(mod,env_df,re.form=NA) %>% exp() - 24.99
+    pred = predict(mod, env_df, re.form = NA) %>% exp() - 24.99
 
-    ## Dead-tree seed production bonus:
+    ## Dead-tree seed production (canopy seed survival) bonus:
     ## In certain conditions, fire-killed trees produce viable seeds. This adds a per-pixel
     ## bonus reflecting natural regeneration from the in-situ dead trees. The bonus is
     ## scalar * (pred at minimum seed dist 15m - pred at actual seed dist), i.e., the fraction
@@ -692,14 +692,14 @@ ui <- navbarPage("PReSET",theme = shinytheme("flatly"), id = "tabset",
                                         selected = 70),
 
                            checkboxInput(inputId = "dead_tree_seed_enabled",
-                                         label = "Enable dead-tree seed production",
+                                         label = "Enable canopy seed survival",
                                          value = FALSE),
                            bsPopover("dead_tree_seed_enabled", title = NULL,
-                                     "In some conditions, fire-killed trees produce viable seeds. When enabled, adds a per-pixel natural regeneration bonus reflecting seed production by standing dead trees. The bonus equals the scalar times the predicted gain from having a seed source at the minimum distance (15 m)."),
+                                     "In some conditions, fire-killed trees produce viable seeds. When enabled, adds a per-pixel natural regeneration bonus reflecting seed production by standing dead trees. The bonus equals the scalar times the predicted gain from having a seed source at the minimum distance (15 m). This phenomenon is not expected to operate substantially in most fires, but in some cases where (a) the fire burned in late summer or early fall when seeds had ripened but not yet dispersed, and (b) the fire intensity was not so high as to consume upper-canopy foliage (and thus heat-kill any ripe seeds), it could provide a meaningful boost to natural regeneration."),
                            conditionalPanel(
                              condition = "input.dead_tree_seed_enabled === true",
                              sliderInput(inputId = "dead_tree_seed_scalar",
-                                         label = "Dead-tree seed production (relative to surviving trees at 15 m):",
+                                         label = "Canopy seed survival seed contribution (relative to surviving trees at 15 m):",
                                          min = 0,
                                          max = 1,
                                          value = 0.25,
@@ -913,10 +913,17 @@ ui <- navbarPage("PReSET",theme = shinytheme("flatly"), id = "tabset",
                     "To estimate the relative effect of tree planting on ultimate seedling density (the primary focus of this tool), it is not necessary to know the seed source distance. It is only required for absolute density predictions.",
                     "While assuming a constant seed source distance across a burned landscape (3 of the 4 options for this input) is not realistic, this implementation makes it possible for a user to export predictions assuming multiple different seed source assumptions and then merge them in GIS using on-the-ground knowledge of seed source availability.",
                     p(),
-                    
-                    
-                    
-                    
+                    tags$b("Canopy seed survival in fire-killed trees"),
+                    br(),
+                    "In most post-fire contexts, fire-killed trees do not produce viable seeds and therefore do not contribute to natural regeneration. However, under certain conditions — particularly, when the fire burned in late summer or early fall when seeds had ripened but not yet dispersed and where the fire was not so hot as to heat-kill any ripe seeds — the standing dead trees within the high-severity patch may contribute meaningfully to natural regeneration.",
+                    "When this option is enabled, PReSET augments the per-pixel natural regeneration prediction, reflecting in-situ seed provision by dead trees. The supplement is the same absolute amount for planted and unplanted predictions at each pixel, because the dead-tree seed pool is independent of whether the site was planted. Because canopy seed survival is not expected everywhere within a fire footprint, the preditions with this option enabled should be treated as an upper-bound of expectations, referenced primarily in areas where the conditions for canopy seed survival are expected to be met.",
+                    "The scalar slider controls how much seed the dead trees are assumed to produce relative to what fully surviving trees at the closest possible distance (15 m) would have contributed. The value defaults to 0.25, derived from the observations of recent research quantifying canopy seed survival (Young et al. 2025).",
+                    "The supplement is largest for pixels deep within the high-severity patch (far from surviving seed trees), and effectively zero for pixels that are already adjacent to surviving trees, since those pixels already receive near-maximum seed input from the surviving seed wall.",
+                    p(),
+
+
+
+
                     br(),
              ),
              column(3)
@@ -955,6 +962,14 @@ ui <- navbarPage("PReSET",theme = shinytheme("flatly"), id = "tabset",
                "Shrub productivity is a critical determinant of reforestation success and a key predictor variable in the seedling density stastical model, but it is difficult to know what the eventual (e.g., 10+ years post-fire) shrub cover will be at a fine spatial scale across a new wildfire. By default, the tool uses a separate statistical model to predict eventual shrub cover using abiotic environmental variables including normal (1981-2010 mean) temperature and precipitation, insolation, and topographic wetness index. This model is fit using shrub cover measured at the same plots used to fit the seedling model. Details on the shrub cover model specification and fit are provided in the scientific paper to be posted here upon publication.",
                "The user can elect to use shrub cover as predicted from this secondary statistical model when predicting reforeststion outcomes. Alternatively, the user can specify a fixed shrub cover (30%, 60%, or 90%) to use across the entire landscape. This option may be more appropriate when, based on on-the-ground knowledge, the user feels confident in the eventual shrub cover in specific focal areas of the focal fire.",
  
+               h3("Canopy seed survival in fire-killed trees"),
+               "The seedling density model includes distance to the nearest surviving conifer (non-high-severity pixel) as a predictor of natural regeneration. It does not account for seed provisioning by fire-killed trees within the high-severity patch, which is appropriate for the majority of post-fire contexts. However, in some situations — such as fires that kill trees after a large cone or seed crop has already been set but not yet dispersed — standing dead trees can contribute to natural regeneration (Young et al. 2025).",
+               "When the canopy seed survival (CSS) option is enabled, PReSET computes a per-pixel additive supplement to natural regeneration density. The supplement is calculated as:",
+               tags$blockquote("supplement = scalar \u00d7 max(predicted density at seed distance 15 m \u2212 predicted density at actual seed distance, 0)"),
+               "where 15 m is the minimum modeled seed source distance (representing trees immediately adjacent to the pixel). This difference represents the natural regeneration gain that would result if a seed source were at the closest possible distance — i.e., the maximum contribution that surviving trees at the site could have provided. The scalar (0\u20131) controls what fraction of that contribution the dead trees are assumed to achieve.",
+               "The supplement is computed on the log-transformed model scale and then back-transformed, so it varies spatially with climate and topography in the same way that seed wall contributions do. It is largest for pixels deep within the high-severity patch and zero for pixels already at the minimum seed distance, where the surviving seed wall already provides maximum input. The same supplement is added to both planted and unplanted density predictions, since canopy seed survival effects are assumed independent of post-fire management action.",
+               "This feature should be used only when there is specific biological justification for expecting viable seed production from the fire-killed trees.",
+
                h3("Confidence filtering"),
                "When the option \"hide low model confidence areas\" is selected, the tool masks out areas of the focal fire where the standard error of prediction > 0.60 on the log-transformed seedling density scale. Areas with combinations of environmental and management conditions that are rare or not present in the plot dataset used to train the model are generally excluded by this option.",
  
