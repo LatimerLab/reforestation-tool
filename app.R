@@ -31,7 +31,7 @@ df_plot_export = reactiveVal(NULL) # for exporting raster maps in file download 
 
 experimental_enabled = reactiveVal(FALSE) # stores whether the experimental tools are enabled
 
-jsResetCode <- "shinyjs.reset = function() {history.go(0)}" # Define the js method that resets the page
+jsResetCode <- "shinyjs.resetPage = function() {history.go(0)}" # Define the js method that resets the page
 
 albers = "+proj=aea +lat_1=34 +lat_2=40.5 +lat_0=0 +lon_0=-120 +x_0=0 +y_0=-4000000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs "
 
@@ -568,7 +568,7 @@ ui <- navbarPage("PReSET",theme = shinytheme("flatly"), id = "tabset",
   tabPanel("Reforestation Tool",
   
     useShinyjs(),                                           # Include shinyjs in the UI
-    extendShinyjs(text = jsResetCode, functions = c("reset")),                      # Add the js code to the page
+    extendShinyjs(text = jsResetCode, functions = c("resetPage")),                      # Add the js code to the page
 
 
     # Sidebar layout with input and output definitions ----
@@ -1090,7 +1090,7 @@ server <- function(input, output, session) {
                {
                     maps_loaded(FALSE)
                  severity_uploaded(FALSE)
-                    js$reset()
+                    js$resetPage()
                }
               )
   
